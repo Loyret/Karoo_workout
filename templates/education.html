@@ -104,7 +104,7 @@
     </div>
 </section>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.getElementById('ftp-edu').addEventListener('input', (e) => {
     const ftp = parseInt(e.target.value) || 200;
     document.querySelectorAll('.zone-watts').forEach(el => {
