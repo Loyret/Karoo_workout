@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Конструктор тренировок — Karoo Trainer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Конструктор тренировок</h1>
+    <p>Создайте свою уникальную тренировку шаг за шагом</p>
+</div>
+
+<div class="builder-layout">
+    <div class="builder-form">
+        <div class="form-section">
+            <h3>Основные параметры</h3>
+            <div class="form-row">
+                <label>Название:</label>
+                <input type="text" id="b-name" value="Моя тренировка" class="input">
+            </div>
+            <div class="form-row">
+                <label>FTP (Вт):</label>
+                <input type="number" id="b-ftp" value="200" min="50" max="500" class="input">
+            </div>
+            <div class="form-row">
+                <label>Описание:</label>
+                <textarea id="b-desc" class="input" rows="2"
+                    placeholder="Для чего эта тренировка?"></textarea>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Этапы тренировки</h3>
+            <div id="steps-list"></div>
+            <button class="btn btn-outline" onclick="addStep()">&#43; Добавить этап</button>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary btn-lg" onclick="generateWorkout()">
+                Сгенерировать тренировку
+            </button>
+        </div>
+    </div>
+
+    <div class="builder-preview">
+        <div class="preview-placeholder" id="preview-area">
+            <div class="chart-container" id="preview-chart-wrap" style="display:none;">
+                <canvas id="previewChart"></canvas>
+            </div>
+            <div id="preview-placeholder-text">
+                <p>&#128202; Добавьте этапы и нажмите «Сгенерировать»</p>
+                <p>Здесь появится график вашей тренировки</p>
+            </div>
+        </div>
+
+        <div id="download-area" style="display:none;">
+            <button class="btn btn-primary btn-lg btn-block" onclick="downloadCustom()">
+                &#11015; Скачать ZWO
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let stepCount = 0;
+let customZWO = '';
+
+function addStep() {
+    const id = stepCount++;
+    const html = `
+    <div class="step-editor" id="step-${id}">
+        <div class="step-editor-header">
+            <span class="step-num">Этап ${id + 1}</span>
+            <select class="input step-type" onchange="toggleStepType(${id})">
+                <option value="Warmup">Разминка (Warmup)</option>
+                <option value="SteadyState" selected>Стабильная работа</option>
+                <option value="Intervals">Интервалы</option>
+                <option value="Cooldown">Заминка (Cooldown)</option>
+            </select>
+            <button class="btn btn-sm btn-danger" onclick="removeStep(${id})">&#10005;</button>
+        </div>
+        <div class="step-editor-body" id="step-body-${id}">
+            <div class="form-row">
+                <label>Длительность (сек):</label>
+                <input type="number" class="input s-duration" value="300" min="10" step="10">
+            </div>
+            <div class="form-row">
+                <label>Мощность (% FTP):</label>
+                <input type="number" class="input s-power" value="75" min="0" max="250" step="1">
+                <span class="input-hint">Если разминка/заминка — указать диапазон</span>
+            </div>
+            <div class="form-row s-power-range" style="display:none;">
+                <label>Мощность низ (% FTP):</label>
+                <input type="number" class="input s-power-low" value="50" min="0" max="250">
+                <label>Мощность выс (% FTP):</label>
+                <input type="number" class="input s-power-high" value="65" min="0" max="250">
+            </div>
+            <div class="form-row">
+                <label>Каденс (об/мин):</label>
+                <input type="number" class="input s-cadence" value="85" min="40" max="150">
+            </div>
+            <div class="form-row">
+                <label>Подсказка:</label>
+                <input type="text" class="input s-text" placeholder="Текст отображаемый на Karoo">
+            </div>
+        </div>
+        <div class="step-editor-body step-intervals" id="step-intervals-${id}" style="display:none;">
+            <div class="form-row">
+                <label>Повторений:</label>
+                <input type="number" class="input s-repeat" value="5" min="1" max="50">
+            </div>
+            <div class="interval-group">
+                <h4>Рабочий этап (On)</h4>
+                <div class="form-row">
+                    <label>Длительность (сек):</label>
+                    <input type="number" class="input s-on-duration" value="120" min="10">
+                </div>
+                <div class="form-row">
+                    <label>Мощность (% FTP):</label>
+                    <input type="number" class="input s-on-power" value="110" min="0" max="250">
+                </div>
+                <div class="form-row">
+                    <label>Каденс:</label>
+                    <input type="number" class="input s-on-cadence" value="95" min="40" max="150">
+                </div>
+            </div>
+            <div class="interval-group">
+                <h4>Восстановление (Off)</h4>
+                <div class="form-row">
+                    <label>Длительность (сек):</label>
+                    <input type="number" class="input s-off-duration" value="60" min="10">
+                </div>
+                <div class="form-row">
+                    <label>Мощность (% FTP):</label>
+                    <input type="number" class="input s-off-power" value="50" min="0" max="250">
+                </div>
+                <div class="form-row">
+                    <label>Каденс:</label>
+                    <input type="number" class="input s-off-cadence" value="70" min="40" max="150">
+                </div>
+            </div>
+        </div>
+    </div>`;
+    document.getElementById('steps-list').insertAdjacentHTML('beforeend', html);
+}
+
+function removeStep(id) {
+    document.getElementById(`step-${id}`).remove();
+}
+
+function toggleStepType(id) {
+    const type = document.querySelector(`#step-${id} .step-type`).value;
+    const isRange = type === 'Warmup' || type === 'Cooldown';
+    const isIntervals = type === 'Intervals';
+
+    document.getElementById(`step-body-${id}`).style.display = isIntervals ? 'none' : '';
+    document.getElementById(`step-intervals-${id}`).style.display = isIntervals ? '' : 'none';
+
+    const rangeEl = document.querySelector(`#step-${id} .s-power-range`);
+    const singleEl = document.querySelector(`#step-${id} .s-power`);
+    if (rangeEl) rangeEl.style.display = isRange ? '' : 'none';
+    if (singleEl) singleEl.style.display = isRange ? 'none' : '';
+}
+
+function generateWorkout() {
+    const ftp = parseInt(document.getElementById('b-ftp').value) || 200;
+    const name = document.getElementById('b-name').value || 'Моя тренировка';
+    const desc = document.getElementById('b-desc').value || '';
+
+    const steps = [];
+    document.querySelectorAll('.step-editor').forEach(editor => {
+        const type = editor.querySelector('.step-type').value;
+        if (type === 'Intervals') {
+            steps.push({
+                type: 'Intervals',
+                repeat: parseInt(editor.querySelector('.s-repeat').value) || 5,
+                on: [{
+                    duration: parseInt(editor.querySelector('.s-on-duration').value) || 120,
+                    power: (parseInt(editor.querySelector('.s-on-power').value) || 110) / 100,
+                    cadence: parseInt(editor.querySelector('.s-on-cadence').value) || null,
+                }],
+                off: [{
+                    duration: parseInt(editor.querySelector('.s-off-duration').value) || 60,
+                    power: (parseInt(editor.querySelector('.s-off-power').value) || 50) / 100,
+                    cadence: parseInt(editor.querySelector('.s-off-cadence').value) || null,
+                }],
+            });
+        } else {
+            const isRange = type === 'Warmup' || type === 'Cooldown';
+            const step = {
+                type: type,
+                duration: parseInt(editor.querySelector('.s-duration').value) || 300,
+                cadence: parseInt(editor.querySelector('.s-cadence').value) || null,
+                text: editor.querySelector('.s-text').value || '',
+            };
+            if (isRange) {
+                step.power_low = (parseInt(editor.querySelector('.s-power-low').value) || 50) / 100;
+                step.power_high = (parseInt(editor.querySelector('.s-power-high').value) || 65) / 100;
+            } else {
+                step.power = (parseInt(editor.querySelector('.s-power').value) || 75) / 100;
+            }
+            steps.push(step);
+        }
+    });
+
+    fetch('/api/build_custom', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ftp, name, description: desc, steps}),
+    })
+    .then(r => r.json())
+    .then(data => {
+        customZWO = data.zwo;
+        document.getElementById('preview-area').innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'chart-container';
+        wrap.innerHTML = '<canvas id="previewChart"></canvas>';
+        document.getElementById('preview-area').appendChild(wrap);
+        drawWorkoutChart(data.chart_data);
+        document.getElementById('download-area').style.display = '';
+    });
+}
+
+function downloadCustom() {
+    const blob = new Blob([customZWO], {type: 'application/xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'custom_workout.zwo';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+addStep();
+</script>
+{% endblock %}

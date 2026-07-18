@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Karoo Trainer — Генератор тренировок{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Генератор тренировок для Karoo 3</h1>
+    <p class="hero-sub">
+        Создавайте профессиональные тренировки для вашего велокомпьютера
+        Hammerhead Karoo 3. Выбирайте шаблоны, настраивайте под свой уровень,
+        загружайте через Hammerhead Dashboard.
+    </p>
+    <div class="hero-actions">
+        <a href="/templates" class="btn btn-primary btn-lg">Выбрать тренировку</a>
+        <a href="/builder" class="btn btn-outline btn-lg">Создать свою</a>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">&#127939;</div>
+            <h3>7 шаблонов</h3>
+            <p>От восстановления до максимальных спринтов.
+               Каждый шаблон с подробными пояснениями.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">&#128202;</div>
+            <h3>Визуализация</h3>
+            <p>График мощности по времени с зонами нагрузки
+               и подписями к каждому этапу.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">&#9889;</div>
+            <h3>ZWO формат</h3>
+            <p>Совместимый с Karoo 3 формат файлов.
+               Загружайте через Dashboard за минуту.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">&#128218;</div>
+            <h3>Пояснения</h3>
+            <p>Понимайте зачем каждая тренировка,
+               что она развивает и как правильно выполнять.</p>
+        </div>
+    </div>
+</section>
+
+<section class="how-to">
+    <h2>Как загрузить тренировку на Karoo 3</h2>
+    <div class="steps-grid">
+        <div class="step">
+            <div class="step-num">1</div>
+            <h4>Выберите тренировку</h4>
+            <p>Перейдите в раздел «Шаблоны» и выберите тренировку,
+               подходящую вашим целям.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <h4>Укажите FTP</h4>
+            <p>Введите вашу функциональную пороговую мощность (FTP).
+               Если не знаете — используйте калькулятор в приложении.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <h4>Скачайте ZWO файл</h4>
+            <p>Нажмите «Скачать ZWO» и сохраните файл на компьютер.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <h4>Загрузите в Dashboard</h4>
+            <p>Откройте Hammerhead Dashboard → Workouts → Add Workout.
+               Перетащите ZWO файл. Тренировка синхронизируется с Karoo 3.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

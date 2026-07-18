@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Обучение — Зоны тренировок — Karoo Trainer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Зоны тренировок</h1>
+    <p>Поймите зачем каждая зона и как её использовать</p>
+</div>
+
+<div class="ftp-input-bar">
+    <label for="ftp-edu">Ваш FTP (Вт):</label>
+    <input type="number" id="ftp-edu" value="200" min="50" max="500" step="5">
+    <span class="ftp-hint">Ватты обновятся автоматически</span>
+</div>
+
+<div class="zones-education">
+    {% for zone in zones %}
+    <div class="zone-card" style="border-left: 4px solid {{ zone.color }}">
+        <div class="zone-header">
+            <div class="zone-badge" style="background: {{ zone.color }}">{{ zone.short }}</div>
+            <div>
+                <h3>{{ zone.name }}</h3>
+                <span class="zone-watts" data-low="{{ zone.power_low }}" data-high="{{ zone.power_high }}">
+                    {{ zone.power_range(200)[0] }}–{{ zone.power_range(200)[1] }} Вт
+                </span>
+            </div>
+        </div>
+        <div class="zone-body">
+            <div class="zone-section">
+                <h4>Описание</h4>
+                <p>{{ zone.description }}</p>
+            </div>
+            <div class="zone-section">
+                <h4>Зачем нужна</h4>
+                <p>{{ zone.purpose }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<section class="education-section">
+    <h2>Что такое FTP?</h2>
+    <div class="edu-content">
+        <p><strong>FTP (Functional Threshold Power)</strong> — функциональная пороговая мощность.
+        Это максимальная мощность, которую вы можете поддерживать стабильно
+        в течение часа без накопления молочной кислоты.</p>
+
+        <h3>Как определить FTP:</h3>
+        <ol>
+            <li><strong>20-минутный тест:</strong> Разминка 15 мин, затем максимальные 20 мин.
+                FTP = средняя мощность за 20 мин × 0.95</li>
+            <li><strong>Ramp Test:</strong> Постепенное увеличение мощности до отказа.
+                FTP ≈ 75% максимальной мощности</li>
+            <li><strong>Гонка:</strong> FTP ≈ средняя мощность за 40-60 мин гонки</li>
+        </ol>
+
+        <div class="edu-tip">
+            <strong>&#128161; Совет:</strong> Если вы новичок, начните с FTP = 2 × вес (кг).
+            Например, при весе 75 кг: FTP ≈ 150 Вт. Это консервативная оценка.
+        </div>
+    </div>
+</section>
+
+<section class="education-section">
+    <h2>Как читать график тренировки</h2>
+    <div class="edu-content">
+        <p>График показывает вашу мощность (% FTP) по времени:</p>
+        <ul>
+            <li><span style="color:#3b82f6;">&#9644;</span> <strong>Синий</strong> — разминка/заминка (Z1)</li>
+            <li><span style="color:#22c55e;">&#9644;</span> <strong>Зелёный</strong> — выносливость (Z2)</li>
+            <li><span style="color:#eab308;">&#9644;</span> <strong>Жёлтый</strong> — темповая (Z3)</li>
+            <li><span style="color:#f97316;">&#9644;</span> <strong>Оранжевый</strong> — пороговая (Z4)</li>
+            <li><span style="color:#ef4444;">&#9644;</span> <strong>Красный</strong> — максимальная (Z5)</li>
+            <li><span style="color:#dc2626;">&#9644;</span> <strong>Тёмно-красный</strong> — анаэробная (Z6)</li>
+            <li><span style="color:#991b1b;">&#9644;</span> <strong>Бордовый</strong> — нейромышечная (Z7)</li>
+        </ul>
+    </div>
+</section>
+
+<section class="education-section">
+    <h2>Принципы тренировок</h2>
+    <div class="edu-grid">
+        <div class="edu-card">
+            <h4>Прогрессивная нагрузка</h4>
+            <p>Увеличивайте объём и интенсивность не более чем на 10% в неделю.
+               Тело адаптируется постепенно.</p>
+        </div>
+        <div class="edu-card">
+            <h4>Восстановление</h4>
+            <p>Мышцы растут во время отдыха, а не во время тренировки.
+               Минимум 1-2 лёгких дня в неделю.</p>
+        </div>
+        <div class="edu-card">
+            <h4>Специфичность</h4>
+            <p>Тренируйтесь под свои цели. Для гор — больше холмов,
+               для гонок — интервалы на пороге.</p>
+        </div>
+        <div class="edu-card">
+            <h4>Регулярность</h4>
+            <p>Лучше тренироваться 4 раза по 1 час, чем 2 раза по 2 часа.
+               Консистентность важнее объёма.</p>
+        </div>
+    </div>
+</section>
+
+<script>
+document.getElementById('ftp-edu').addEventListener('input', (e) => {
+    const ftp = parseInt(e.target.value) || 200;
+    document.querySelectorAll('.zone-watts').forEach(el => {
+        const low = Math.round(ftp * parseFloat(el.dataset.low));
+        const high = Math.round(ftp * parseFloat(el.dataset.high));
+        el.textContent = `${low}–${high} Вт`;
+    });
+});
+</script>
+{% endblock %}

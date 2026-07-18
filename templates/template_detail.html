@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ template.name }} — Karoo Trainer{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <a href="/templates" class="back-link">&larr; Назад к шаблонам</a>
+    <h1>{{ template.name }}</h1>
+    <div class="detail-meta">
+        <span class="category-badge">{{ template.category }}</span>
+        <span class="difficulty">
+            {% for i in range(template.difficulty) %}&#9733;{% endfor %}
+            {% for i in range(5 - template.difficulty) %}&#9734;{% endfor %}
+            Сложность
+        </span>
+        <span class="duration">{{ template.duration_min }} мин</span>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <div class="chart-container">
+            <canvas id="workoutChart"></canvas>
+            <div id="chartTooltip" class="chart-tooltip" style="display:none;"></div>
+        </div>
+
+        <div class="ftp-control">
+            <label for="ftp-detail">FTP (Вт):</label>
+            <input type="number" id="ftp-detail" value="{{ ftp }}" min="50" max="500" step="5">
+            <button class="btn btn-sm" onclick="updateFTP()">Обновить</button>
+        </div>
+
+        <div class="workout-steps">
+            <h3>Структура тренировки</h3>
+            <div class="steps-timeline">
+                {% set ns = namespace(t=0) %}
+                {% for step in workout.steps %}
+                    {% if step.type == 'Intervals' %}
+                        {% for rep in range(step.repeat) %}
+                            {% for on_step in step.on_steps %}
+                            <div class="step-block step-on" style="flex-grow: {{ on_step.duration }}">
+                                <div class="step-label">
+                                    <strong>{{ fmt_time(ns.t) }}</strong>
+                                    <span>{{ on_step.power|int }}% FTP</span>
+                                    {% if on_step.cadence %}
+                                    <span>{{ on_step.cadence }} rpm</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% set ns.t = ns.t + on_step.duration %}
+                            {% endfor %}
+                            {% for off_step in step.off_steps %}
+                            <div class="step-block step-off" style="flex-grow: {{ off_step.duration }}">
+                                <div class="step-label">
+                                    <strong>{{ fmt_time(ns.t) }}</strong>
+                                    <span>{{ off_step.power|int }}% FTP</span>
+                                </div>
+                            </div>
+                            {% set ns.t = ns.t + off_step.duration %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="step-block
+                        {% if step.type == 'Warmup' %}step-warmup
+                        {% elif step.type == 'Cooldown' %}step-cooldown
+                        {% else %}step-ss{% endif %}"
+                        style="flex-grow: {{ step.duration }}">
+                        <div class="step-label">
+                            <strong>{{ fmt_time(ns.t) }}</strong>
+                            {% if step.power %}
+                            <span>{{ (step.power * 100)|int }}% FTP</span>
+                            {% elif step.power_low and step.power_high %}
+                            <span>{{ (step.power_low * 100)|int }}-{{ (step.power_high * 100)|int }}% FTP</span>
+                            {% endif %}
+                            {% if step.cadence %}
+                            <span>{{ step.cadence }} rpm</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% set ns.t = ns.t + step.duration %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-sidebar">
+        <div class="info-card">
+            <h3>О тренировке</h3>
+            <p>{{ template.explanation }}</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Советы по выполнению</h3>
+            <ul class="tips-list">
+                {% for tip in template.tips %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="info-card">
+            <h3>Зоны нагрузки</h3>
+            <div class="zones-legend">
+                {% for zone in zones %}
+                <div class="zone-item">
+                    <span class="zone-color" style="background: {{ zone.color }}"></span>
+                    <span class="zone-name">{{ zone.short }} — {{ zone.name }}</span>
+                    <span class="zone-range">{{ zone.power_range(ftp)[0] }}-{{ zone.power_range(ftp)[1] }} Вт</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="download-section">
+            <button class="btn btn-primary btn-lg btn-block"
+                    onclick="downloadZWO()">
+                &#11015; Скачать ZWO файл
+            </button>
+            <p class="download-hint">
+                Файл совместим с Hammerhead Karoo 3.
+                Загрузите через Dashboard → Workouts → Add Workout
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+const chartData = {{ chart_data|safe }};
+const templateId = '{{ template.id }}';
+
+function downloadZWO() {
+    const ftp = document.getElementById('ftp-detail').value;
+    window.location.href = `/api/download/${templateId}?ftp=${ftp}`;
+}
+
+function updateFTP() {
+    const ftp = document.getElementById('ftp-detail').value;
+    window.location.href = `/template/${templateId}?ftp=${ftp}`;
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    drawWorkoutChart(chartData);
+});
+</script>
+{% endblock %}

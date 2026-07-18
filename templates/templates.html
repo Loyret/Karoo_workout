@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Шаблоны тренировок — Karoo Trainer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Шаблоны тренировок</h1>
+    <p>Выберите тренировку по цели и уровню подготовки</p>
+</div>
+
+<div class="ftp-input-bar">
+    <label for="ftp-global">Ваш FTP (Вт):</label>
+    <input type="number" id="ftp-global" value="200" min="50" max="500" step="5">
+    <span class="ftp-hint">Если не знаете FTP, используйте 200 как отправную точку</span>
+</div>
+
+<div class="category-filters">
+    <button class="filter-btn active" data-cat="all">Все</button>
+    {% for cat in categories %}
+    <button class="filter-btn" data-cat="{{ cat }}">{{ cat }}</button>
+    {% endfor %}
+</div>
+
+<div class="templates-grid">
+    {% for tmpl in templates %}
+    <div class="template-card" data-category="{{ tmpl.category }}">
+        <div class="template-header">
+            <span class="difficulty">
+                {% for i in range(tmpl.difficulty) %}&#9733;{% endfor %}
+                {% for i in range(5 - tmpl.difficulty) %}&#9734;{% endfor %}
+            </span>
+            <span class="duration">{{ tmpl.duration_min }} мин</span>
+        </div>
+        <h3>{{ tmpl.name }}</h3>
+        <span class="category-badge">{{ tmpl.category }}</span>
+        <p class="template-desc">{{ tmpl.description }}</p>
+        <div class="template-tips">
+            <strong>Ключевые советы:</strong>
+            <ul>
+                {% for tip in tmpl.tips[:2] %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="/template/{{ tmpl.id }}?ftp=200"
+           class="btn btn-primary btn-block template-link">
+            Подробнее и скачать
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.style.display = (cat === 'all' || card.dataset.category === cat) ? '' : 'none';
+        });
+    });
+});
+
+document.getElementById('ftp-global').addEventListener('change', (e) => {
+    const ftp = e.target.value;
+    document.querySelectorAll('.template-link').forEach(link => {
+        const url = new URL(link.href);
+        url.searchParams.set('ftp', ftp);
+        link.href = url.toString();
+    });
+});
+</script>
+{% endblock %}
