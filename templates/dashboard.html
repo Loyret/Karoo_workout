@@ -92,13 +92,13 @@
                     &#11015; Скачать
                 </a>
                 {% if not w.completed %}
-                <button class="btn btn-sm btn-success"
-                        onclick="completeWorkout({{ w.id }})">
+                <button class="btn btn-sm btn-success btn-complete"
+                        data-id="{{ w.id }}">
                     &#10003; Выполнено
                 </button>
                 {% endif %}
-                <button class="btn btn-sm btn-danger"
-                        onclick="deleteWorkout({{ w.id }})">
+                <button class="btn btn-sm btn-danger btn-delete"
+                        data-id="{{ w.id }}">
                     &#10005;
                 </button>
             </div>
@@ -114,19 +114,23 @@
 </div>
 
 <script>
-function completeWorkout(id) {
-    fetch(`/api/workout/complete/${id}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({}),
-    }).then(() => location.reload());
-}
-
-function deleteWorkout(id) {
-    if (!confirm('Удалить тренировку?')) return;
-    fetch(`/api/workout/delete/${id}`, {
-        method: 'POST',
-    }).then(() => location.reload());
-}
+document.querySelector('.history-list').addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-complete');
+    if (btn) {
+        fetch(`/api/workout/complete/${btn.dataset.id}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({}),
+        }).then(() => location.reload());
+        return;
+    }
+    const del = e.target.closest('.btn-delete');
+    if (del) {
+        if (!confirm('Удалить тренировку?')) return;
+        fetch(`/api/workout/delete/${del.dataset.id}`, {
+            method: 'POST',
+        }).then(() => location.reload());
+    }
+});
 </script>
 {% endblock %}

@@ -26,7 +26,7 @@
         <div class="ftp-control">
             <label for="ftp-detail">FTP (Вт):</label>
             <input type="number" id="ftp-detail" value="{{ ftp }}" min="50" max="500" step="5">
-            <button class="btn btn-sm" onclick="updateFTP()">Обновить</button>
+            <button class="btn btn-sm" id="update-ftp-btn">Обновить</button>
         </div>
 
         <div class="workout-steps">
@@ -114,12 +114,12 @@
         <div class="download-section">
             {% if current_user.is_authenticated %}
             <button class="btn btn-success btn-lg btn-block"
-                    onclick="saveWorkout()" id="save-btn">
+                    id="save-btn">
                 &#128278; Сохранить в мои тренировки
             </button>
             {% endif %}
             <button class="btn btn-primary btn-lg btn-block"
-                    onclick="downloadZWO()">
+                    id="download-zwo-btn">
                 &#11015; Скачать ZWO файл
             </button>
             <p class="download-hint">
@@ -134,17 +134,17 @@
 const chartData = {{ chart_data|safe }};
 const templateId = '{{ template.id }}';
 
-function downloadZWO() {
+document.getElementById('download-zwo-btn').addEventListener('click', function() {
     const ftp = document.getElementById('ftp-detail').value;
     window.location.href = `/api/download/${templateId}?ftp=${ftp}`;
-}
+});
 
-function updateFTP() {
+document.getElementById('update-ftp-btn').addEventListener('click', function() {
     const ftp = document.getElementById('ftp-detail').value;
     window.location.href = `/template/${templateId}?ftp=${ftp}`;
-}
+});
 
-function saveWorkout() {
+document.getElementById('save-btn').addEventListener('click', function() {
     const ftp = document.getElementById('ftp-detail').value;
     const btn = document.getElementById('save-btn');
     btn.disabled = true;
@@ -169,7 +169,7 @@ function saveWorkout() {
             btn.disabled = false;
         }
     });
-}
+});
 </script>
 
 <script>
