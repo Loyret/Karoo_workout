@@ -1,0 +1,117 @@
+{% extends "admin/base.html" %}
+{% block title %}Настройки почты — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Настройки почты</h1>
+    <p>Настройка SMTP для отправки писем пользователям</p>
+</div>
+
+<div class="admin-section" style="max-width: 600px;">
+    <form method="POST" class="admin-settings-form">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="checkbox-label" style="font-size: 1rem;">
+                <input type="checkbox" name="MAIL_ENABLED"
+                       {% if env.get('MAIL_ENABLED', 'true') == 'true' %}checked{% endif %}
+                       style="width: 18px; height: 18px;">
+                Отправка почты включена
+            </label>
+            <div class="input-hint" style="margin-top: 0.3rem;">
+                Если выключено — письма не отправляются, email подтверждается автоматически
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label>SMTP сервер</label>
+            <input type="text" name="MAIL_SERVER" class="input"
+                   value="{{ env.get('MAIL_SERVER', 'smtp.gmail.com') }}"
+                   placeholder="smtp.gmail.com">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+            <div class="form-group">
+                <label>Порт</label>
+                <input type="number" name="MAIL_PORT" class="input"
+                       value="{{ env.get('MAIL_PORT', '587') }}"
+                       placeholder="587">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="MAIL_USE_TLS"
+                           {% if env.get('MAIL_USE_TLS', 'true') == 'true' %}checked{% endif %}
+                           style="width: 18px; height: 18px;">
+                    Использовать TLS
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label>Имя пользователя (email)</label>
+            <input type="email" name="MAIL_USERNAME" class="input"
+                   value="{{ env.get('MAIL_USERNAME', '') }}"
+                   placeholder="user@gmail.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label>Пароль</label>
+            <input type="password" name="MAIL_PASSWORD" class="input"
+                   value=""
+                   placeholder="{% if env.get('MAIL_PASSWORD') %}••••••••{% else %}Не задан{% endif %}">
+            <div class="input-hint">Оставьте пустым, чтобы не менять</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>Адрес отправителя</label>
+            <input type="text" name="MAIL_DEFAULT_SENDER" class="input"
+                   value="{{ env.get('MAIL_DEFAULT_SENDER', '') }}"
+                   placeholder="Karoo Trainer <noreply@example.com>">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-section" style="max-width: 600px; margin-top: 1.5rem;">
+    <h2>Популярные провайдеры</h2>
+    <div class="admin-table-wrap" style="border: none;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Провайдер</th>
+                    <th>Сервер</th>
+                    <th>Порт</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Gmail</td>
+                    <td class="td-mono">smtp.gmail.com</td>
+                    <td>587</td>
+                </tr>
+                <tr>
+                    <td>Yandex</td>
+                    <td class="td-mono">smtp.yandex.ru</td>
+                    <td>465</td>
+                </tr>
+                <tr>
+                    <td>Mail.ru</td>
+                    <td class="td-mono">smtp.mail.ru</td>
+                    <td>465</td>
+                </tr>
+                <tr>
+                    <td>SendGrid</td>
+                    <td class="td-mono">smtp.sendgrid.net</td>
+                    <td>587</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="input-hint" style="margin-top: 0.75rem;">
+        Для Gmail используйте пароль приложения (App Password), а не обычный пароль.
+        Для Yandex/Mail.ru с портом 465 — отключите TLS.
+    </div>
+</div>
+{% endblock %}

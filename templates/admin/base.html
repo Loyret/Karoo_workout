@@ -19,6 +19,7 @@
             <a href="/admin" class="{% if request.path == '/admin' %}active{% endif %}">Обзор</a>
             <a href="/admin/users" class="{% if '/admin/users' in request.path %}active{% endif %}">Пользователи</a>
             <a href="/admin/workouts" class="{% if '/admin/workouts' in request.path %}active{% endif %}">Тренировки</a>
+            <a href="/admin/settings" class="{% if '/admin/settings' in request.path %}active{% endif %}">Почта</a>
             <a href="/admin/logs" class="{% if '/admin/logs' in request.path %}active{% endif %}">Логи</a>
         </div>
         <div class="nav-auth">

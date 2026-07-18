@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from functools import wraps
 from datetime import datetime, timedelta
 
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    request, flash, jsonify,
+    request, flash, jsonify, current_app,
 )
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -15,6 +17,58 @@ from generator.workouts import WorkoutTemplates
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 templates_store = WorkoutTemplates()
+
+ENV_FILE = Path(__file__).resolve().parent / ".env"
+
+MAIL_KEYS = [
+    "MAIL_ENABLED",
+    "MAIL_SERVER",
+    "MAIL_PORT",
+    "MAIL_USE_TLS",
+    "MAIL_USERNAME",
+    "MAIL_PASSWORD",
+    "MAIL_DEFAULT_SENDER",
+]
+
+
+def _read_env() -> dict[str, str]:
+    result = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, _, value = line.partition("=")
+                result[key.strip()] = value.strip()
+    return result
+
+
+def _write_env(updates: dict[str, str]) -> None:
+    lines = ENV_FILE.read_text().splitlines() if ENV_FILE.exists() else []
+    keys_written = set()
+    new_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            new_lines.append(line)
+            continue
+        if "=" in stripped:
+            key = stripped.partition("=")[0].strip()
+            if key in updates:
+                new_lines.append(f"{key}={updates[key]}")
+                keys_written.add(key)
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+
+    for key, value in updates.items():
+        if key not in keys_written:
+            new_lines.append(f"{key}={value}")
+
+    ENV_FILE.write_text("\n".join(new_lines) + "\n")
 
 
 def admin_required(f):
@@ -345,6 +399,43 @@ def logs_list():
         "admin/logs.html",
         logs=pagination.items,
         pagination=pagination,
+    )
+
+
+@admin_bp.route("/settings", methods=["GET", "POST"])
+@admin_required
+def settings():
+    if request.method == "POST":
+        updates = {}
+        for key in MAIL_KEYS:
+            if key in request.form:
+                updates[key] = request.form[key].strip()
+
+        updates["MAIL_ENABLED"] = "true" if request.form.get("MAIL_ENABLED") == "on" else "false"
+        updates["MAIL_USE_TLS"] = "true" if request.form.get("MAIL_USE_TLS") == "on" else "false"
+
+        if not updates.get("MAIL_PASSWORD"):
+            env = _read_env()
+            updates["MAIL_PASSWORD"] = env.get("MAIL_PASSWORD", "")
+
+        _write_env(updates)
+
+        current_app.config["MAIL_SERVER"] = updates.get("MAIL_SERVER", "")
+        current_app.config["MAIL_PORT"] = int(updates.get("MAIL_PORT", "587"))
+        current_app.config["MAIL_USE_TLS"] = updates.get("MAIL_USE_TLS", "true") == "true"
+        current_app.config["MAIL_USERNAME"] = updates.get("MAIL_USERNAME", "")
+        current_app.config["MAIL_PASSWORD"] = updates.get("MAIL_PASSWORD", "")
+        current_app.config["MAIL_DEFAULT_SENDER"] = updates.get("MAIL_DEFAULT_SENDER", "")
+
+        log_admin_action("update_settings", "system", details="mail settings updated")
+        flash("Настройки почты сохранены", "success")
+        return redirect(url_for("admin.settings"))
+
+    env = _read_env()
+    return render_template(
+        "admin/settings.html",
+        env=env,
+        mail_keys=MAIL_KEYS,
     )
 
 

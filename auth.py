@@ -10,7 +10,7 @@ from wtforms import StringField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 
 from models import db, User
-from email_service import send_verification_email, send_reset_email
+from email_service import send_verification_email, send_reset_email, MAIL_ENABLED
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -79,18 +79,25 @@ def register():
 
         user = User(username=username, email=email, ftp=form.ftp.data)
         user.set_password(form.password.data)
+
+        if not MAIL_ENABLED:
+            user.is_verified = True
+
         db.session.add(user)
         db.session.commit()
 
-        token = user.generate_verify_token()
-        db.session.commit()
+        if MAIL_ENABLED:
+            token = user.generate_verify_token()
+            db.session.commit()
 
-        try:
-            send_verification_email(user, token)
-            flash("Письмо с подтверждением отправлено на " + email, "success")
-        except Exception:
-            current_app.logger.warning("Failed to send verification email")
-            flash("Аккаунт создан. Письмо не удалось отправить.", "info")
+            try:
+                send_verification_email(user, token)
+                flash("Письмо с подтверждением отправлено на " + email, "success")
+            except Exception:
+                current_app.logger.warning("Failed to send verification email")
+                flash("Аккаунт создан. Письмо не удалось отправить.", "info")
+        else:
+            flash("Аккаунт создан. Почта отключена — email подтверждён автоматически.", "success")
 
         login_user(user)
         return redirect(url_for("dashboard.dashboard"))
@@ -170,10 +177,20 @@ def forgot_password():
                 send_reset_email(user, token)
             except Exception:
                 current_app.logger.warning("Failed to send reset email")
-        flash(
-            "Если аккаунт с таким email существует, письмо отправлено",
-            "info",
-        )
+
+            if not MAIL_ENABLED:
+                reset_url = url_for("auth.reset_password_form", token=token, _external=True)
+                flash(f"Почта отключена. Ссылка для сброса: {reset_url}", "info")
+            else:
+                flash(
+                    "Если аккаунт с таким email существует, письмо отправлено",
+                    "info",
+                )
+        else:
+            flash(
+                "Если аккаунт с таким email существует, письмо отправлено",
+                "info",
+            )
         return redirect(url_for("auth.login"))
 
     return render_template("auth/forgot_password.html", form=form)
