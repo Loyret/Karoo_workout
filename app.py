@@ -289,6 +289,8 @@ def create_app() -> Flask:
             "chart_data": chart_data,
         })
 
+    _migrate_db(app)
+
     return app
 
 
@@ -297,27 +299,23 @@ def _migrate_db(app: Flask) -> None:
         db.create_all()
 
         inspector = db.inspect(db.engine)
-
-        users_cols = {c["name"] for c in inspector.get_columns("users")}
-        if "is_admin" not in users_cols:
-            db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
-            db.session.commit()
-
         tables = {t for t in inspector.get_table_names()}
-        if "admin_logs" not in tables:
-            db.session.execute(db.text("""
-                CREATE TABLE admin_logs (
-                    id INTEGER PRIMARY KEY,
-                    admin_id INTEGER NOT NULL REFERENCES users(id),
-                    action VARCHAR(50) NOT NULL,
-                    target_type VARCHAR(50) NOT NULL,
-                    target_id INTEGER,
-                    details TEXT DEFAULT '',
-                    ip_address VARCHAR(45),
-                    created_at DATETIME
-                )
-            """))
-            db.session.commit()
+
+        if "users" in tables:
+            users_cols = {c["name"] for c in inspector.get_columns("users")}
+            if "is_admin" not in users_cols:
+                dialect = engine_dialect()
+                if dialect == "postgresql":
+                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+                elif dialect == "sqlite":
+                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
+                else:
+                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+                db.session.commit()
+
+
+def engine_dialect() -> str:
+    return db.engine.dialect.name
 
 
 app = create_app()
