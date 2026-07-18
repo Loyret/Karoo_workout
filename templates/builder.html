@@ -29,11 +29,11 @@
         <div class="form-section">
             <h3>Этапы тренировки</h3>
             <div id="steps-list"></div>
-            <button class="btn btn-outline" onclick="addStep()">&#43; Добавить этап</button>
+            <button class="btn btn-outline" id="add-step-btn">&#43; Добавить этап</button>
         </div>
 
         <div class="form-actions">
-            <button class="btn btn-primary btn-lg" onclick="generateWorkout()">
+            <button class="btn btn-primary btn-lg" id="generate-btn">
                 Сгенерировать тренировку
             </button>
         </div>
@@ -51,7 +51,7 @@
         </div>
 
         <div id="download-area" style="display:none;">
-            <button class="btn btn-primary btn-lg btn-block" onclick="downloadCustom()">
+            <button class="btn btn-primary btn-lg btn-block" id="download-custom-btn">
                 &#11015; Скачать ZWO
             </button>
         </div>
@@ -65,16 +65,16 @@ let customZWO = '';
 function addStep() {
     const id = stepCount++;
     const html = `
-    <div class="step-editor" id="step-${id}">
+    <div class="step-editor" id="step-${id}" data-step-id="${id}">
         <div class="step-editor-header">
             <span class="step-num">Этап ${id + 1}</span>
-            <select class="input step-type" onchange="toggleStepType(${id})">
+            <select class="input step-type">
                 <option value="Warmup">Разминка (Warmup)</option>
                 <option value="SteadyState" selected>Стабильная работа</option>
                 <option value="Intervals">Интервалы</option>
                 <option value="Cooldown">Заминка (Cooldown)</option>
             </select>
-            <button class="btn btn-sm btn-danger" onclick="removeStep(${id})">&#10005;</button>
+            <button class="btn btn-sm btn-danger btn-remove-step">&#10005;</button>
         </div>
         <div class="step-editor-body" id="step-body-${id}">
             <div class="form-row">
@@ -141,25 +141,23 @@ function addStep() {
     document.getElementById('steps-list').insertAdjacentHTML('beforeend', html);
 }
 
-function removeStep(id) {
-    document.getElementById(`step-${id}`).remove();
-}
-
-function toggleStepType(id) {
-    const type = document.querySelector(`#step-${id} .step-type`).value;
+function toggleStepType(stepEl) {
+    const type = stepEl.querySelector('.step-type').value;
     const isRange = type === 'Warmup' || type === 'Cooldown';
     const isIntervals = type === 'Intervals';
 
-    document.getElementById(`step-body-${id}`).style.display = isIntervals ? 'none' : '';
-    document.getElementById(`step-intervals-${id}`).style.display = isIntervals ? '' : 'none';
+    stepEl.querySelector('.step-editor-body:not(.step-intervals)').style.display = isIntervals ? 'none' : '';
+    stepEl.querySelector('.step-intervals').style.display = isIntervals ? '' : 'none';
 
-    const rangeEl = document.querySelector(`#step-${id} .s-power-range`);
-    const singleEl = document.querySelector(`#step-${id} .s-power`);
+    const rangeEl = stepEl.querySelector('.s-power-range');
+    const singleEl = stepEl.querySelector('.s-power');
     if (rangeEl) rangeEl.style.display = isRange ? '' : 'none';
     if (singleEl) singleEl.style.display = isRange ? 'none' : '';
 }
 
-function generateWorkout() {
+document.getElementById('add-step-btn').addEventListener('click', addStep);
+
+document.getElementById('generate-btn').addEventListener('click', function() {
     const ftp = parseInt(document.getElementById('b-ftp').value) || 200;
     const name = document.getElementById('b-name').value || 'Моя тренировка';
     const desc = document.getElementById('b-desc').value || '';
@@ -216,9 +214,9 @@ function generateWorkout() {
         drawWorkoutChart(data.chart_data);
         document.getElementById('download-area').style.display = '';
     });
-}
+});
 
-function downloadCustom() {
+document.getElementById('download-custom-btn').addEventListener('click', function() {
     const blob = new Blob([customZWO], {type: 'application/xml'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -226,7 +224,20 @@ function downloadCustom() {
     a.download = 'custom_workout.zwo';
     a.click();
     URL.revokeObjectURL(url);
-}
+});
+
+document.getElementById('steps-list').addEventListener('change', function(e) {
+    if (e.target.classList.contains('step-type')) {
+        toggleStepType(e.target.closest('.step-editor'));
+    }
+});
+
+document.getElementById('steps-list').addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-remove-step');
+    if (btn) {
+        btn.closest('.step-editor').remove();
+    }
+});
 
 addStep();
 </script>

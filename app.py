@@ -318,8 +318,7 @@ def engine_dialect() -> str:
     return db.engine.dialect.name
 
 
-app = create_app()
-
 if __name__ == "__main__":
+    app = create_app()
     _migrate_db(app)
     app.run(debug=True, port=5000, use_reloader=False)

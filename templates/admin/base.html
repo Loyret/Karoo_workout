@@ -51,6 +51,14 @@
     </footer>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+    document.addEventListener('submit', function(e) {
+        var form = e.target.closest('.confirm-delete-form');
+        if (form && !confirm(form.dataset.msg || 'Confirm?')) {
+            e.preventDefault();
+        }
+    });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

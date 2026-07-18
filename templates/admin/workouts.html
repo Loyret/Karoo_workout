@@ -51,7 +51,7 @@
                 <td class="td-date">{{ w.created_at.strftime('%d.%m.%Y') }}</td>
                 <td>
                     <form method="POST" action="/admin/workouts/{{ w.id }}/delete" style="display:inline"
-                          onsubmit="return confirm('Удалить тренировку?')">
+                          class="confirm-delete-form" data-msg="Удалить тренировку?">
                         <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
                     </form>
                 </td>

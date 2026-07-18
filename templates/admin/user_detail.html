@@ -90,13 +90,13 @@
                 </button>
             </form>
 
-            <form method="POST" action="/admin/users/{{ user.id }}/reset-password" class="admin-action-form"
-                  onsubmit="return confirm('Сбросить пароль пользователя?')">
+            <form method="POST" action="/admin/users/{{ user.id }}/reset-password" class="admin-action-form confirm-delete-form"
+                  data-msg="Сбросить пароль пользователя?">
                 <button type="submit" class="btn btn-sm btn-outline">Сбросить пароль</button>
             </form>
 
-            <form method="POST" action="/admin/users/{{ user.id }}/delete" class="admin-action-form"
-                  onsubmit="return confirm('УДАЛИТЬ пользователя {{ user.username }}? Это действие необратимо!')">
+            <form method="POST" action="/admin/users/{{ user.id }}/delete" class="admin-action-form confirm-delete-form"
+                  data-msg="УДАЛИТЬ пользователя {{ user.username }}? Это действие необратимо!">
                 <button type="submit" class="btn btn-sm btn-danger">Удалить пользователя</button>
             </form>
         </div>
