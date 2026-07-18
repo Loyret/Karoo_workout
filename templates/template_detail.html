@@ -130,7 +130,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 const chartData = {{ chart_data|safe }};
 const templateId = '{{ template.id }}';
 
@@ -172,7 +172,7 @@ document.getElementById('save-btn').addEventListener('click', function() {
 });
 </script>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
     drawWorkoutChart(chartData);
 });

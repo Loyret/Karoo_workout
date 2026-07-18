@@ -3,10 +3,11 @@ from __future__ import annotations
 import io
 import json
 import os
+import secrets
 from pathlib import Path
 
 from flask import (
-    Flask, render_template, request, jsonify, send_file,
+    Flask, render_template, request, jsonify, send_file, g,
 )
 from flask_login import LoginManager, current_user
 from flask_limiter import Limiter
@@ -111,10 +112,15 @@ def create_app() -> Flask:
             return f"{h}:{m:02d}:{s:02d}"
         return f"{m}:{s:02d}"
 
+    @app.before_request
+    def generate_csp_nonce():
+        g.csp_nonce = secrets.token_urlsafe(32)
+
     @app.context_processor
     def inject_globals():
         return {
             "user_ftp": current_user.ftp if current_user.is_authenticated else 200,
+            "csp_nonce": getattr(g, "csp_nonce", ""),
         }
 
     @app.after_request
@@ -122,6 +128,14 @@ def create_app() -> Flask:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        nonce = getattr(g, "csp_nonce", "")
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            f"script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "connect-src 'self';"
+        )
         return response
 
     @app.route("/")
