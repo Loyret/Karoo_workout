@@ -51,41 +51,11 @@ cd /opt/karoo-trainer
 source venv/bin/activate
 
 python3 -c "
-from app import create_app
-from models import db
+from app import create_app, _migrate_db
 
 app = create_app()
-with app.app_context():
-    inspector = db.inspect(db.engine)
-
-    # Добавить is_admin если нет
-    users_cols = {c['name'] for c in inspector.get_columns('users')}
-    if 'is_admin' not in users_cols:
-        db.session.execute(db.text('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE'))
-        db.session.commit()
-        print('  ✓ Колонка is_admin добавлена')
-    else:
-        print('  ✓ Колонка is_admin уже есть')
-
-    # Создать admin_logs если нет
-    tables = {t for t in inspector.get_table_names()}
-    if 'admin_logs' not in tables:
-        db.session.execute(db.text(\"\"\"
-            CREATE TABLE admin_logs (
-                id INTEGER PRIMARY KEY,
-                admin_id INTEGER NOT NULL REFERENCES users(id),
-                action VARCHAR(50) NOT NULL,
-                target_type VARCHAR(50) NOT NULL,
-                target_id INTEGER,
-                details TEXT DEFAULT '',
-                ip_address VARCHAR(45),
-                created_at DATETIME
-            )
-        \"\"\"))
-        db.session.commit()
-        print('  ✓ Таблица admin_logs создана')
-    else:
-        print('  ✓ Таблица admin_logs уже есть')
+_migrate_db(app)
+print('  ✓ Миграция выполнена')
 "
 MIGRATE_EOF
 
