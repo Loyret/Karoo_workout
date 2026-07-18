@@ -289,6 +289,8 @@ def create_app() -> Flask:
             "chart_data": chart_data,
         })
 
+    _migrate_db(app)
+
     return app
 
 
