@@ -112,6 +112,12 @@
         </div>
 
         <div class="download-section">
+            {% if current_user.is_authenticated %}
+            <button class="btn btn-success btn-lg btn-block"
+                    onclick="saveWorkout()" id="save-btn">
+                &#128278; Сохранить в мои тренировки
+            </button>
+            {% endif %}
             <button class="btn btn-primary btn-lg btn-block"
                     onclick="downloadZWO()">
                 &#11015; Скачать ZWO файл
@@ -136,6 +142,33 @@ function downloadZWO() {
 function updateFTP() {
     const ftp = document.getElementById('ftp-detail').value;
     window.location.href = `/template/${templateId}?ftp=${ftp}`;
+}
+
+function saveWorkout() {
+    const ftp = document.getElementById('ftp-detail').value;
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Сохранение...';
+
+    fetch('/api/workout/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({template_id: templateId, ftp: parseInt(ftp)}),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            btn.textContent = '&#10003; Сохранено!';
+            btn.className = 'btn btn-success btn-lg btn-block';
+            setTimeout(() => {
+                btn.textContent = 'В каталог';
+                btn.onclick = () => window.location.href = '/dashboard';
+            }, 1500);
+        } else {
+            btn.textContent = 'Ошибка. Попробовать снова';
+            btn.disabled = false;
+        }
+    });
 }
 </script>
 

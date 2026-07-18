@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 2rem; }
+        .card { background: #fff; border-radius: 12px; padding: 2rem; max-width: 480px; margin: 0 auto;
+                box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        h1 { color: #0f172a; font-size: 1.5rem; margin-bottom: 0.5rem; }
+        p { color: #475569; line-height: 1.6; }
+        .btn { display: inline-block; background: #f97316; color: #fff !important; text-decoration: none;
+               padding: 0.75rem 2rem; border-radius: 8px; font-weight: 600; margin: 1rem 0; }
+        .footer { color: #94a3b8; font-size: 0.8rem; margin-top: 2rem; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Сброс пароля</h1>
+        <p>Привет, {{ user.username }}!</p>
+        <p>Мы получили запрос на сброс пароля для вашего аккаунта.
+           Нажмите кнопку ниже, чтобы задать новый пароль:</p>
+        <a href="{{ reset_url }}" class="btn">Задать новый пароль</a>
+        <p style="font-size:0.85rem; color:#94a3b8;">
+            Или скопируйте ссылку:<br>
+            <a href="{{ reset_url }}">{{ reset_url }}</a>
+        </p>
+        <p style="font-size:0.85rem; color:#94a3b8;">
+            Ссылка действительна 1 час.<br>
+            Если вы не запрашивали сброс — просто проигнорируйте это письмо.
+        </p>
+        <div class="footer">Karoo Trainer &mdash; Генератор тренировок для Karoo 3</div>
+    </div>
+</body>
+</html>

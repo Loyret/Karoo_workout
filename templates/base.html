@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}Karoo Trainer{% endblock %}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -20,6 +23,18 @@
             <a href="/templates" class="{% if '/template' in request.path %}active{% endif %}">Шаблоны</a>
             <a href="/builder" class="{% if request.path == '/builder' %}active{% endif %}">Конструктор</a>
             <a href="/education" class="{% if request.path == '/education' %}active{% endif %}">Обучение</a>
+        </div>
+        <div class="nav-auth">
+            {% if current_user.is_authenticated %}
+            <a href="/dashboard" class="nav-user">
+                <span class="nav-user-icon">{{ current_user.username[0]|upper }}</span>
+                {{ current_user.username }}
+            </a>
+            <a href="/logout" class="btn btn-sm btn-outline">Выйти</a>
+            {% else %}
+            <a href="/login" class="btn btn-sm btn-outline">Войти</a>
+            <a href="/register" class="btn btn-sm btn-primary">Регистрация</a>
+            {% endif %}
         </div>
     </nav>
 

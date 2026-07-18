@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Мой профиль — Karoo Trainer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Мой профиль</h1>
+    <p>Привет, {{ current_user.username }}!</p>
+</div>
+
+{% if not current_user.is_verified %}
+<div class="verify-banner">
+    <div class="verify-banner-text">
+        &#9888; Email не подтверждён. Проверьте почту
+        <strong>{{ current_user.email }}</strong> или
+        <a href="/resend-verify">отправьте письмо повторно</a>.
+    </div>
+</div>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages">
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Всего тренировок</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ completed }}</div>
+        <div class="stat-label">Выполнено</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_min }}</div>
+        <div class="stat-label">Минут</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ current_user.ftp }}</div>
+        <div class="stat-label">FTP (Вт)</div>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages">
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="dashboard-actions">
+    <a href="/templates" class="btn btn-primary">Выбрать тренировку</a>
+    <a href="/builder" class="btn btn-outline">Создать свою</a>
+    <a href="/dashboard/settings" class="btn btn-outline">Настройки профиля</a>
+</div>
+
+<div class="history-section">
+    <h2>История тренировок</h2>
+
+    {% if workouts %}
+    <div class="history-list">
+        {% for w in workouts %}
+        <div class="history-card {% if w.completed %}completed{% endif %}">
+            <div class="history-header">
+                <div>
+                    <h3>{{ w.name }}</h3>
+                    <span class="history-meta">
+                        {{ w.duration_min }} мин &bull;
+                        FTP {{ w.ftp_at_time }} Вт &bull;
+                        {{ w.created_at }}
+                    </span>
+                </div>
+                <div class="history-status">
+                    {% if w.completed %}
+                    <span class="badge badge-success">&#10003; Выполнено</span>
+                    {% else %}
+                    <span class="badge badge-pending">Запланировано</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="history-actions">
+                <a href="/api/workout/download/{{ w.id }}"
+                   class="btn btn-sm" title="Скачать ZWO">
+                    &#11015; Скачать
+                </a>
+                {% if not w.completed %}
+                <button class="btn btn-sm btn-success"
+                        onclick="completeWorkout({{ w.id }})">
+                    &#10003; Выполнено
+                </button>
+                {% endif %}
+                <button class="btn btn-sm btn-danger"
+                        onclick="deleteWorkout({{ w.id }})">
+                    &#10005;
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>У вас пока нет сохранённых тренировок</p>
+        <a href="/templates" class="btn btn-primary">Выбрать первую тренировку</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function completeWorkout(id) {
+    fetch(`/api/workout/complete/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({}),
+    }).then(() => location.reload());
+}
+
+function deleteWorkout(id) {
+    if (!confirm('Удалить тренировку?')) return;
+    fetch(`/api/workout/delete/${id}`, {
+        method: 'POST',
+    }).then(() => location.reload());
+}
+</script>
+{% endblock %}
