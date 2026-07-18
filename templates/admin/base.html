@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Админ-панель{% endblock %} — Karoo Trainer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-brand">
+            <a href="/admin">
+                <span class="nav-icon">&#9881;</span>
+                Karoo Admin
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="/admin" class="{% if request.path == '/admin' %}active{% endif %}">Обзор</a>
+            <a href="/admin/users" class="{% if '/admin/users' in request.path %}active{% endif %}">Пользователи</a>
+            <a href="/admin/workouts" class="{% if '/admin/workouts' in request.path %}active{% endif %}">Тренировки</a>
+            <a href="/admin/logs" class="{% if '/admin/logs' in request.path %}active{% endif %}">Логи</a>
+        </div>
+        <div class="nav-auth">
+            <a href="/dashboard" class="nav-user">
+                <span class="nav-user-icon admin-icon">{{ current_user.username[0]|upper }}</span>
+                {{ current_user.username }}
+            </a>
+            <a href="/" class="btn btn-sm btn-outline">На сайт</a>
+            <a href="/logout" class="btn btn-sm btn-outline">Выйти</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Karoo Trainer Admin Panel</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

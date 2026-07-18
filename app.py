@@ -17,6 +17,7 @@ from models import db, User
 from mail import mail, init_mail
 from auth import auth_bp
 from dashboard import dashboard_bp
+from admin import admin_bp
 from generator.zwo import ZWOGenerator, Workout, WorkoutStep
 from generator.workouts import WorkoutTemplates
 from generator.zones import TrainingZones
@@ -45,6 +46,7 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(admin_bp)
 
     limiter.limit("10/minute")(
         app.view_functions.get("auth.login", lambda: None)

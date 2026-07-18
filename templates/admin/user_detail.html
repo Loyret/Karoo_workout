@@ -1,0 +1,142 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ user.username }} — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="/admin/users" class="back-link">&larr; К списку пользователей</a>
+    <h1>{{ user.username }}</h1>
+    <p>{{ user.email }}</p>
+</div>
+
+<div class="admin-detail-grid">
+    <div class="admin-section">
+        <h2>Информация</h2>
+        <div class="detail-info">
+            <div class="detail-row">
+                <span class="detail-label">ID</span>
+                <span class="detail-value">{{ user.id }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Имя</span>
+                <span class="detail-value">{{ user.username }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ user.email }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">FTP</span>
+                <span class="detail-value">{{ user.ftp }} Вт</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Вес</span>
+                <span class="detail-value">{{ user.weight_kg or '—' }} {{ 'кг' if user.weight_kg else '' }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email подтверждён</span>
+                <span class="detail-value">
+                    {% if user.is_verified %}
+                    <span class="badge badge-success">Да</span>
+                    {% else %}
+                    <span class="badge badge-warning">Нет</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Администратор</span>
+                <span class="detail-value">
+                    {% if user.is_admin %}
+                    <span class="badge badge-admin">Да</span>
+                    {% else %}
+                    <span class="badge badge-user">Нет</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Дата регистрации</span>
+                <span class="detail-value">{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h2>Статистика</h2>
+        <div class="admin-stats compact">
+            <div class="stat-mini">
+                <div class="stat-mini-value">{{ total_workouts }}</div>
+                <div class="stat-mini-label">Тренировок</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-value">{{ completed }}</div>
+                <div class="stat-mini-label">Выполнено</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-value">{{ total_min }}</div>
+                <div class="stat-mini-label">Минут</div>
+            </div>
+        </div>
+
+        <h2>Действия</h2>
+        <div class="admin-actions">
+            <form method="POST" action="/admin/users/{{ user.id }}/toggle-admin" class="admin-action-form">
+                <button type="submit" class="btn btn-sm {% if user.is_admin %}btn-warning{% else %}btn-outline{% endif %}">
+                    {% if user.is_admin %}Отозвать admin{% else %}Сделать admin{% endif %}
+                </button>
+            </form>
+
+            <form method="POST" action="/admin/users/{{ user.id }}/toggle-verify" class="admin-action-form">
+                <button type="submit" class="btn btn-sm btn-outline">
+                    {% if user.is_verified %}Отменить верификацию{% else %}Подтвердить email{% endif %}
+                </button>
+            </form>
+
+            <form method="POST" action="/admin/users/{{ user.id }}/reset-password" class="admin-action-form"
+                  onsubmit="return confirm('Сбросить пароль пользователя?')">
+                <button type="submit" class="btn btn-sm btn-outline">Сбросить пароль</button>
+            </form>
+
+            <form method="POST" action="/admin/users/{{ user.id }}/delete" class="admin-action-form"
+                  onsubmit="return confirm('УДАЛИТЬ пользователя {{ user.username }}? Это действие необратимо!')">
+                <button type="submit" class="btn btn-sm btn-danger">Удалить пользователя</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="admin-section" style="margin-top: 2rem;">
+    <div class="admin-section-header">
+        <h2>Изменить FTP</h2>
+    </div>
+    <form method="POST" action="/admin/users/{{ user.id }}/set-ftp" class="admin-ftp-form">
+        <div class="form-row">
+            <label>FTP (Вт):</label>
+            <input type="number" name="ftp" value="{{ user.ftp }}" min="50" max="500" class="input" style="max-width: 120px;">
+            <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-section" style="margin-top: 2rem;">
+    <div class="admin-section-header">
+        <h2>История тренировок</h2>
+    </div>
+    {% if workouts %}
+    <div class="admin-list">
+        {% for w in workouts %}
+        <div class="admin-list-item">
+            <span class="admin-list-name">
+                {{ w.name }}
+                {% if w.completed %}<span class="badge badge-success">&#10003;</span>{% endif %}
+            </span>
+            <span class="admin-list-meta">
+                {{ w.duration_min }} мин &bull; FTP {{ w.ftp_at_time }} &bull; {{ w.created_at.strftime('%d.%m.%Y') }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-text">Нет тренировок</p>
+    {% endif %}
+</div>
+
+{% endblock %}

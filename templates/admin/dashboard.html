@@ -1,0 +1,188 @@
+{% extends "admin/base.html" %}
+{% block title %}Обзор — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Админ-панель</h1>
+    <p>Обзор системы и статистика</p>
+</div>
+
+<div class="stats-grid admin-stats">
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ total_users }}</div>
+        <div class="stat-label">Всего пользователей</div>
+        <div class="stat-sub">+{{ new_users_week }} за неделю</div>
+    </div>
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ verified_users }}</div>
+        <div class="stat-label">Подтверждённых</div>
+        <div class="stat-sub">{{ ((verified_users / total_users * 100)|round(0)) if total_users else 0 }}%</div>
+    </div>
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ total_workouts }}</div>
+        <div class="stat-label">Всего тренировок</div>
+        <div class="stat-sub">+{{ workouts_week }} за неделю</div>
+    </div>
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ completed_workouts }}</div>
+        <div class="stat-label">Выполнено</div>
+        <div class="stat-sub">{{ ((completed_workouts / total_workouts * 100)|round(0)) if total_workouts else 0 }}%</div>
+    </div>
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ total_minutes }}</div>
+        <div class="stat-label">Всего минут</div>
+        <div class="stat-sub">{{ (total_minutes / 60)|round(1) }} ч</div>
+    </div>
+    <div class="stat-card stat-admin">
+        <div class="stat-value">{{ avg_ftp }}</div>
+        <div class="stat-label">Средний FTP</div>
+        <div class="stat-sub">Вт</div>
+    </div>
+</div>
+
+<div class="admin-grid">
+    <div class="admin-section">
+        <h2>Регистрации (30 дней)</h2>
+        <div class="chart-container">
+            <canvas id="registrationsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h2>Тренировки (30 дней)</h2>
+        <div class="chart-container">
+            <canvas id="workoutsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="admin-grid">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h2>Популярные шаблоны</h2>
+        </div>
+        {% if popular_templates %}
+        <div class="admin-list">
+            {% for tpl_id, count in popular_templates %}
+            <div class="admin-list-item">
+                <span class="admin-list-name">{{ tpl_id }}</span>
+                <span class="admin-list-value">{{ count }} использований</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-text">Пока нет данных</p>
+        {% endif %}
+    </div>
+
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h2>Новые пользователи</h2>
+            <a href="/admin/users" class="btn btn-sm btn-outline">Все</a>
+        </div>
+        {% if recent_users %}
+        <div class="admin-list">
+            {% for u in recent_users %}
+            <a href="/admin/users/{{ u.id }}" class="admin-list-item admin-list-link">
+                <span class="admin-list-name">
+                    {{ u.username }}
+                    {% if u.is_admin %}<span class="badge badge-admin">admin</span>{% endif %}
+                </span>
+                <span class="admin-list-meta">{{ u.created_at.strftime('%d.%m.%Y') }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-text">Пока нет пользователей</p>
+        {% endif %}
+    </div>
+
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h2>Последние действия</h2>
+            <a href="/admin/logs" class="btn btn-sm btn-outline">Все</a>
+        </div>
+        {% if recent_logs %}
+        <div class="admin-list">
+            {% for log in recent_logs %}
+            <div class="admin-list-item">
+                <span class="admin-list-name">
+                    <span class="admin-action-badge action-{{ log.action }}">{{ log.action }}</span>
+                    {{ log.target_type }} #{{ log.target_id or '' }}
+                </span>
+                <span class="admin-list-meta">{{ log.created_at.strftime('%d.%m %H:%M') }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-text">Пока нет логов</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const regData = {{ daily_registrations|tojson }};
+    const workoutData = {{ daily_workouts|tojson }};
+
+    const labels = regData.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit'});
+    });
+
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#94a3b8', font: { size: 11 } },
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#94a3b8', stepSize: 1 },
+            }
+        }
+    };
+
+    new Chart(document.getElementById('registrationsChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: regData.map(d => d.count),
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderColor: '#3b82f6',
+                borderWidth: 1,
+                borderRadius: 4,
+            }]
+        },
+        options: chartDefaults,
+    });
+
+    new Chart(document.getElementById('workoutsChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: workoutData.map(d => d.count),
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#22c55e',
+            }]
+        },
+        options: chartDefaults,
+    });
+});
+</script>
+{% endblock %}

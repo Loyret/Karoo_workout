@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     ftp = db.Column(db.Integer, default=200)
     weight_kg = db.Column(db.Float, nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.utcnow()
     )
@@ -33,6 +34,10 @@ class User(UserMixin, db.Model):
     workouts = db.relationship(
         "WorkoutHistory", backref="user", lazy=True, cascade="all, delete-orphan"
     )
+
+    @property
+    def is_admin_user(self) -> bool:
+        return self.is_admin
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -116,4 +121,34 @@ class WorkoutHistory(db.Model):
                 if self.completed_at
                 else None
             ),
+        }
+
+
+class AdminLog(db.Model):
+    __tablename__ = "admin_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
+    target_id = db.Column(db.Integer, nullable=True)
+    details = db.Column(db.Text, default="")
+    ip_address = db.Column(db.String(45), nullable=True)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.utcnow()
+    )
+
+    admin = db.relationship("User", backref="admin_actions", lazy=True)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "admin_id": self.admin_id,
+            "admin_name": self.admin.username if self.admin else "?",
+            "action": self.action,
+            "target_type": self.target_type,
+            "target_id": self.target_id,
+            "details": self.details,
+            "ip_address": self.ip_address,
+            "created_at": self.created_at.strftime("%d.%m.%Y %H:%M"),
         }

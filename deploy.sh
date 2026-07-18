@@ -705,21 +705,63 @@ print_ok "Ротация логов настроена (14 дней)"
 # ─────────────────────── ИНИЦИАЛИЗАЦИЯ БД ───────────────────────
 print_header "Инициализация базы данных"
 
+# Спрашиваем данные первого администратора
+echo ""
+echo -e "${YELLOW}  Создание первого администратора:${NC}"
+echo ""
+read -p "  Имя администратора (по умолчанию admin): " ADMIN_USER
+ADMIN_USER=${ADMIN_USER:-admin}
+read -p "  Email администратора: " ADMIN_EMAIL
+read -s -p "  Пароль администратора: " ADMIN_PASS
+echo ""
+
+if [ -z "$ADMIN_EMAIL" ] || [ -z "$ADMIN_PASS" ]; then
+    print_error "Email и пароль администратора обязательны!"
+    exit 1
+fi
+
+# Передаём данные через переменные окружения
+ADMIN_USER="$ADMIN_USER" ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASS="$ADMIN_PASS" \
 sudo -u karoo bash << 'INIT_EOF'
 set -e
 cd /opt/karoo-trainer
 source venv/bin/activate
 python3 -c "
+import os
 from app import create_app
-from models import db
+from models import db, User
 
 app = create_app()
 with app.app_context():
     db.create_all()
     print('✓ Таблицы БД созданы')
+
+    admin_username = os.environ.get('ADMIN_USER', 'admin')
+    admin_email = os.environ.get('ADMIN_EMAIL', '')
+    admin_pass = os.environ.get('ADMIN_PASS', '')
+
+    if admin_email and admin_pass:
+        existing = User.query.filter(
+            (User.username == admin_username) | (User.email == admin_email)
+        ).first()
+
+        if existing:
+            print(f'⚠ Пользователь {admin_username} уже существует — пропускаю')
+        else:
+            admin = User(
+                username=admin_username,
+                email=admin_email,
+                ftp=250,
+                is_verified=True,
+                is_admin=True,
+            )
+            admin.set_password(admin_pass)
+            db.session.add(admin)
+            db.session.commit()
+            print(f'✓ Администратор {admin_username} создан')
 "
 INIT_EOF
-check_ok "База данных инициализирована"
+check_ok "База данных инициализирована, администратор создан"
 
 # ─────────────────────── ЗАПУСК ───────────────────────
 print_header "Запуск приложения"
@@ -781,11 +823,19 @@ echo -e "${GREEN}║                                                        ║$
 echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  ${CYAN}Ваш сайт:${NC}      https://${DOMAIN}"
+echo -e "  ${CYAN}Админ-панель:${NC}  https://${DOMAIN}/admin"
 echo -e "  ${CYAN}Локальный:${NC}     http://127.0.0.1:8000"
 echo -e "  ${CYAN}SSH:${NC}           ssh -p $SSH_PORT user@${DOMAIN}"
 echo -e "  ${CYAN}Логи:${NC}          /var/log/karoo/"
 echo -e "  ${CYAN}Конфиг:${NC}         /opt/karoo-trainer/.env"
 echo -e "  ${CYAN}Код:${NC}            /opt/karoo-trainer/"
+echo ""
+echo -e "  ${YELLOW}═══ Администратор ═══${NC}"
+echo "    Логин:    ${ADMIN_USER}"
+echo "    Email:    ${ADMIN_EMAIL}"
+echo "    Пароль:   ${ADMIN_PASS}"
+echo ""
+echo -e "  ${RED}⚠ Сохрани пароль администратора — он больше не будет показан!${NC}"
 echo ""
 echo -e "  ${YELLOW}═══ Безопасность ═══${NC}"
 echo "    UFW:             $(ufw status | head -2 | tail -1)"
