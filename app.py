@@ -292,9 +292,36 @@ def create_app() -> Flask:
     return app
 
 
+def _migrate_db(app: Flask) -> None:
+    with app.app_context():
+        db.create_all()
+
+        inspector = db.inspect(db.engine)
+
+        users_cols = {c["name"] for c in inspector.get_columns("users")}
+        if "is_admin" not in users_cols:
+            db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+            db.session.commit()
+
+        tables = {t for t in inspector.get_table_names()}
+        if "admin_logs" not in tables:
+            db.session.execute(db.text("""
+                CREATE TABLE admin_logs (
+                    id INTEGER PRIMARY KEY,
+                    admin_id INTEGER NOT NULL REFERENCES users(id),
+                    action VARCHAR(50) NOT NULL,
+                    target_type VARCHAR(50) NOT NULL,
+                    target_id INTEGER,
+                    details TEXT DEFAULT '',
+                    ip_address VARCHAR(45),
+                    created_at DATETIME
+                )
+            """))
+            db.session.commit()
+
+
 app = create_app()
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+    _migrate_db(app)
     app.run(debug=True, port=5000, use_reloader=False)
